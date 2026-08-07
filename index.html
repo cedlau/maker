@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>maker</title>
+  <link rel="stylesheet" href="./style.css">
+  <!-- Volontairement AUCUN script : ni maker.js (341 Ko gz) ni o3dv.min.js
+       (282 Ko gz). L'accueil doit s'afficher instantanement ; chaque generateur
+       charge le module partage a l'ouverture de sa page. -->
+</head>
+<body class="home">
+  <main class="home-main">
+    <header class="home-header">
+      <h1>maker</h1>
+      <p class="sub">WebAssembly — génération de modèles 3D dans le navigateur</p>
+    </header>
+
+    <nav class="cards">
+      <a class="card" href="./shapes.html">
+        <h2>Formes paramétriques</h2>
+        <p>25 surfaces analytiques, voxels, fractales et L-systèmes, pilotées au curseur :
+          tore, bouteille de Klein, nœuds, éponge de Menger…</p>
+      </a>
+
+      <a class="card" href="./gothic.html">
+        <h2>Fenêtre gothique</h2>
+        <p>Remplage architectural paramétrique — lancettes, rosace, meneaux — avec
+          aller-retour du descripteur au format JSON.</p>
+      </a>
+
+      <a class="card" href="./relief.html">
+        <h2>Image to puzzle</h2>
+        <p>Une image bitmap devient un relief coloré : quantification des couleurs,
+          vectorisation des régions puis extrusion.</p>
+      </a>
+
+      <a class="card" href="./pixels.html">
+        <h2>Blocs pixelisés</h2>
+        <p>La même image, mais pixelisée : chaque zone contiguë d'une couleur devient
+          un bloc 3D séparable, à imprimer et assembler.</p>
+      </a>
+
+      <a class="card" href="./svg.html">
+        <h2>Extrusion SVG</h2>
+        <p>Les contours fermés d'un fichier vectoriel sont tesselés et extrudés en un
+          volume imprimable.</p>
+      </a>
+    </nav>
+
+    <footer class="home-footer">
+      Export OBJ · GLB · STL sur chaque page.
+    </footer>
+  </main>
+</body>
+</html>
