@@ -1,0 +1,344 @@
+{
+  "title": "Extrusion SVG",
+  "subtitle": "contours vectoriels · marqueterie · extrusion — piloté par un graphe",
+  "_comment": [
+    "GABARIT DE PAGE. Cf. text3d.json pour le contrat de ce format.",
+    "La chaine est VISIBLE dans le document : file.ref -> svg.extrude.colored -> mesh.color.",
+    "Le noeud d'extrusion est MONOLITHIQUE, et c'est assume : une liste plate de contours ne",
+    "transporte ni la couleur d'une forme ni son rang, donc le decoupage habituel du catalogue",
+    "-- un producteur de contours, un extrudeur partage -- ne peut pas porter cette chaine.",
+    "svg.contours + shape.extrude n'est PAS retire : les documents deja enregistres qui",
+    "l'enchainent continuent de s'ouvrir et de se calculer.",
+    "LA BASCULE « Couleurs du fichier » gouverne DEUX choses a la fois -- la palette et le retrait",
+    "de la matiere recouverte. Peindre sans decouper laisserait deux capots coplanaires : le rendu",
+    "les fait clignoter et le volume compte deux fois la meme matiere.",
+    "Decochee, la page rend ce qu'elle rendait avant ce noeud, et « Couleur de la piece » reprend",
+    "la main. Cochee, mesh.color ne peint plus rien -- il ne repeint que les faces sans materiau --",
+    "et le selecteur se grise TOUT SEUL, sur la mesure `paintedFaces` que le noeud publie."
+  ],
+  "output": 3,
+  "sources": [
+    {
+      "node": 4,
+      "label": "Fichier SVG",
+      "accept": ".svg,image/svg+xml",
+      "default": "data/svg/rose.svg",
+      "hint": "Le fichier est désigné par un nœud file.ref, dont le chemin EST sérialisé : un document enregistré depuis cette page sait quoi relire. Les contours FERMÉS donnent de la matière ; les tracés ouverts et les traits des formes remplies passent par « Traits »."
+    }
+  ],
+  "expose": [
+    {
+      "node": 1,
+      "param": "flattenTol",
+      "label": "Finesse d'échantillonnage",
+      "type": "float",
+      "min": 0.0005,
+      "max": 0.05,
+      "step": 0.0005,
+      "hint": "Fraction de la taille de l'objet produit, et non une longueur : 0,005 vaut un deux-centième quelle que soit l'échelle du SVG importé. Plus bas = courbes plus fines, maillage plus lourd, et recalcul plus long.",
+      "group": "Import"
+    },
+    {
+      "node": 1,
+      "param": "centerAndFit",
+      "label": "Centrer et cadrer",
+      "type": "bool",
+      "hint": "Ramène le dessin à l'origine et le met à l'échelle. Décoché, les coordonnées du SVG sont conservées telles quelles — utile pour superposer deux fichiers.",
+      "group": "Import"
+    },
+    {
+      "node": 1,
+      "param": "invertY",
+      "label": "Inverser l'axe Y",
+      "type": "bool",
+      "hint": "Le SVG compte Y vers le BAS, la géométrie 3D vers le haut. Décocher retourne le dessin.",
+      "group": "Import"
+    },
+    {
+      "node": 1,
+      "param": "strokeToVolume",
+      "label": "Épaissir les traits",
+      "type": "bool",
+      "hint": "Un tracé OUVERT n'a pas d'intérieur et ne produirait rien. Coché, il est converti en ruban de la largeur de son `stroke-width`.",
+      "group": "Traits"
+    },
+    {
+      "node": 1,
+      "param": "strokeOnFilledShapes",
+      "label": "Tracer les contours",
+      "type": "bool",
+      "hint": "Le trait d'une forme FERMÉE ET REMPLIE, produit en anneau par-dessus son remplissage. Sans lui, ce trait est perdu — sur le tigre de référence, 65 formes sur 239 en portent un. ⚠ L'anneau déborde d'une demi-largeur : l'emprise du dessin grandit un peu, donc tous les sommets bougent sous « Centrer et cadrer ». Sans « Couleurs du fichier », il prend la couleur de son remplissage et n'est donc pas visible.",
+      "group": "Traits"
+    },
+    {
+      "node": 1,
+      "param": "strokeScale",
+      "label": "Facteur de largeur",
+      "type": "float",
+      "min": 0.1,
+      "max": 10.0,
+      "step": 0.1,
+      "hint": "Multiplie la largeur lue dans le fichier, pour les deux familles de trait.",
+      "group": "Traits"
+    },
+    {
+      "node": 1,
+      "param": "strokeWidthFallback",
+      "label": "Largeur par défaut",
+      "type": "float",
+      "min": 0.1,
+      "max": 20.0,
+      "step": 0.1,
+      "hint": "Largeur retenue pour un trait dont le fichier ne déclare pas de `stroke-width`.",
+      "group": "Traits"
+    },
+    {
+      "node": 1,
+      "param": "minStrokeWorldWidth",
+      "label": "Largeur minimale",
+      "type": "float",
+      "min": 0.0,
+      "max": 0.02,
+      "step": 0.0005,
+      "hint": "Plancher de largeur, dans la même unité que « Finesse » — une fraction de la pièce, pas une longueur : 0,004 vaut 0,4 mm sur une pièce de 100 mm, soit une buse d'impression. Un trait plus fin est ÉLARGI, jamais supprimé. À 0, aucun trait n'est touché — et sur un dessin comme le tigre, aucun n'atteint alors la buse.",
+      "group": "Traits"
+    },
+    {
+      "node": 1,
+      "param": "fitSize",
+      "label": "Taille (mm)",
+      "type": "float",
+      "min": 10.0,
+      "max": 300.0,
+      "step": 1.0,
+      "hint": "LA COTE ABSOLUE de cette page, mesurée sur le plus grand côté de la pièce. Contrairement aux blocs pixelisés et au puzzle, un dessin vectoriel n'a pas de grain — ni cellule ni pixel — dont la taille totale pourrait découler : c'est elle la référence, et la profondeur s'exprime dans la même unité.",
+      "group": "Extrusion"
+    },
+    {
+      "node": 1,
+      "param": "depth",
+      "label": "Profondeur (mm)",
+      "type": "float",
+      "min": 0.2,
+      "max": 50.0,
+      "step": 0.1,
+      "hint": "Épaisseur de la pièce, dans la même unité que « Taille ». Les deux étant absolues, changer la taille ne change PAS la profondeur — c'est le seul endroit du maker où deux longueurs sont indépendantes.",
+      "group": "Extrusion"
+    },
+    {
+      "node": 1,
+      "param": "useSvgColors",
+      "label": "Couleurs du fichier",
+      "type": "bool",
+      "hint": "UN réglage, DEUX effets : chaque forme prend la couleur du document, ET la matière que les formes du dessus recouvrent est retirée. Le second n'est pas un supplément — sans lui, deux formes superposées gardent deux capots coplanaires, que le rendu fait clignoter. Décoché, la pièce sort d'un seul tenant et « Couleur de la pièce » la peint. Les couleurs franchissent l'export OBJ et l'export GLB : l'archive OBJ porte un .mtl à côté du .obj, le GLB embarque ses matériaux dans un seul fichier, un par teinte. Le STL, lui, ne porte pas de couleur — c'est le format qui ne sait pas.",
+      "group": "Couleur"
+    },
+    {
+      "node": 1,
+      "param": "strokeUsesStrokeColor",
+      "label": "Traits à leur propre couleur",
+      "type": "bool",
+      "hint": "Un trait prend la couleur de son `stroke` plutôt que celle du remplissage de sa forme. Décoché, un trait se fond dans sa forme : on paie la découpe sans rien voir. Sans effet quand « Couleurs du fichier » est décoché.",
+      "group": "Couleur"
+    },
+    {
+      "node": 3,
+      "param": "color",
+      "label": "Couleur de la pièce",
+      "type": "color",
+      "hint": "Elle appartient au DOCUMENT et non à la vue : on la choisit une fois, on la retrouve en rouvrant le fichier. Elle ne peint QUE les faces sans matériau — donc rien du tout quand « Couleurs du fichier » est coché. Elle franchit l'export OBJ, qui livre un .mtl à côté du .obj dans l'archive, et l'export GLB, qui embarque ses matériaux ; pas le STL, format sans couleur.",
+      "group": "Couleur",
+      "disableWhen": {
+        "node": 3,
+        "stat": "paintedFaces",
+        "equals": 0,
+        "reason": "Le fichier porte ses propres couleurs : il ne reste aucune face à peindre."
+      }
+    }
+  ],
+  "graph": {
+    "format": "cggraph",
+    "formatVersion": 1,
+    "nodes": [
+      {
+        "id": 4,
+        "type": "file.ref",
+        "version": 1,
+        "x": -220.0,
+        "y": 160.0,
+        "params": [
+          {
+            "name": "path",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "string",
+            "value": ""
+          },
+          {
+            "name": "name",
+            "role": "nonSemantic",
+            "kind": "literal",
+            "type": "string",
+            "value": "sans nom"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "type": "svg.extrude.colored",
+        "version": 1,
+        "x": 60.0,
+        "y": 160.0,
+        "params": [
+          {
+            "name": "flattenTol",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "float",
+            "value": 0.005
+          },
+          {
+            "name": "centerAndFit",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "bool",
+            "value": true
+          },
+          {
+            "name": "invertY",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "bool",
+            "value": true
+          },
+          {
+            "name": "strokeToVolume",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "bool",
+            "value": true
+          },
+          {
+            "name": "strokeScale",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "float",
+            "value": 1.0
+          },
+          {
+            "name": "strokeWidthFallback",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "float",
+            "value": 1.0
+          },
+          {
+            "name": "strokeOnFilledShapes",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "bool",
+            "value": true
+          },
+          {
+            "name": "minStrokeWorldWidth",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "float",
+            "value": 0.0
+          },
+          {
+            "name": "strokeUsesStrokeColor",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "bool",
+            "value": true
+          },
+          {
+            "name": "useSvgColors",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "bool",
+            "value": true
+          },
+          {
+            "name": "fitSize",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "float",
+            "value": 100.0
+          },
+          {
+            "name": "depth",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "float",
+            "value": 3.0
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "type": "mesh.color",
+        "version": 1,
+        "x": 400.0,
+        "y": 160.0,
+        "params": [
+          {
+            "name": "color",
+            "role": "semantic",
+            "kind": "literal",
+            "type": "string",
+            "value": "#b4bec8"
+          }
+        ]
+      }
+    ],
+    "links": [
+      {
+        "from": 4,
+        "fromPort": 0,
+        "to": 1,
+        "toPort": 0
+      },
+      {
+        "from": 1,
+        "fromPort": 0,
+        "to": 3,
+        "toPort": 0
+      }
+    ]
+  },
+  "watch": [
+    {
+      "node": 1,
+      "stat": "gradientShapes",
+      "warnAbove": 0,
+      "message": "{value} forme(s) en dégradé, rendues par un aplat"
+    },
+    {
+      "node": 1,
+      "stat": "hiddenShapes",
+      "warnAbove": 0,
+      "message": "{value} forme(s) entièrement masquées par une forme au-dessus : elles ne produisent aucune matière"
+    }
+  ],
+  "groups": [
+    {
+      "name": "Import",
+      "hint": "Comment le fichier est lu et ramené à des contours : finesse des courbes, cadrage, sens de l'axe vertical."
+    },
+    {
+      "name": "Traits",
+      "hint": "Les deux familles de trait — les tracés OUVERTS, qui n'ont pas d'intérieur, et le contour des formes remplies — puis leur largeur."
+    },
+    {
+      "name": "Extrusion",
+      "hint": "Les deux cotes de la pièce, en millimètres : son encombrement et son épaisseur."
+    },
+    {
+      "name": "Couleur",
+      "hint": "Les couleurs du document, ou une teinte unique si on les écarte. Elles franchissent l'export OBJ, dont l'archive porte le .mtl."
+    }
+  ],
+  "sourcesGroup": "Fichier SVG"
+}

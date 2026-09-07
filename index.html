@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>maker</title>
   <link rel="stylesheet" href="./style.css">
-  <!-- Volontairement AUCUN script : ni maker.js (341 Ko gz) ni o3dv.min.js
+  <!-- Volontairement AUCUN script : ni maker.js (341 Ko gz) ni le bundle vendor
        (282 Ko gz). L'accueil doit s'afficher instantanement ; chaque generateur
        charge le module partage a l'ouverture de sa page. -->
 </head>
@@ -45,6 +45,22 @@
         <h2>Extrusion SVG</h2>
         <p>Les contours fermés d'un fichier vectoriel sont tesselés et extrudés en un
           volume imprimable.</p>
+      </a>
+
+      <a class="card" href="./text.html">
+        <h2>Texte 3D</h2>
+        <p>Une police TrueType ou OpenType, une phrase, et les contours des glyphes
+          deviennent un volume imprimable. Cotes en millimètres, hauteur de lettre
+          honorée, arête chanfreinée ou congée, socle rectangulaire ou en
+          silhouette du texte, export STL binaire.</p>
+      </a>
+      <!-- La SEPTIEME page, et la seule dont le module ne vit pas sur ce
+           thread : son graphe et son rendu tiennent dans un Web Worker. -->
+      <a class="card" href="./graph.html">
+        <h2>Graphe nodal</h2>
+        <p>Chaîner des opérations de maillage — chargement, lissage, simplification —
+          dans un graphe évalué à la demande. Le calcul et le rendu vivent dans un
+          Web Worker : la page reste vivante pendant un nœud long.</p>
       </a>
     </nav>
 
